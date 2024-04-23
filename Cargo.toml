@@ -1,0 +1,21 @@
+[package]
+name = "sportident"
+version = "0.0.2"
+edition = "2021"
+description = "Interact with Sportident in rust with ease."
+license = "Apache-2.0"
+repository = "https://github.com/yogevm15/sportident-rs"
+readme = "README.md"
+keywords = ["sportident", "orienteering"]
+categories = ["hardware-support"]
+
+[dependencies]
+bitflags = "2"
+chrono = "0.4.35"
+enum_dispatch = "0.3.12"
+tokio-serial = "5.0.5"
+tokio-util = { version = "0.7", features = ["codec"] }
+thiserror = "1.0.58"
+strum_macros = "0.26"
+futures = "0.3.30"
+tokio = { version = "1.37.0", features = ["io-util", "macros", "rt-multi-thread"] }
