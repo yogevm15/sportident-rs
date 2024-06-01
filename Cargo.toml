@@ -1,6 +1,6 @@
 [package]
 name = "sportident"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 description = "Interact with Sportident in rust with ease."
 license = "Apache-2.0"
@@ -8,6 +8,7 @@ repository = "https://github.com/yogevm15/sportident-rs"
 readme = "README.md"
 keywords = ["sportident", "orienteering"]
 categories = ["hardware-support"]
+include = ["/src", "LICENSE", "/examples", "README.md"]
 
 [dependencies]
 bitflags = "2"
