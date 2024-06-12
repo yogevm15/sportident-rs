@@ -45,6 +45,8 @@ pub enum DecoderError {
     InvalidReadoutDataLength,
     #[error("Invalid punch time")]
     InvalidPunchTime,
+    #[error("Invalid owner data")]
+    InvalidOwnerData,
 }
 
 pub enum Responses {

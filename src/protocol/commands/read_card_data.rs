@@ -11,7 +11,7 @@ impl ReadCardData {
     }
 }
 
-const BLOCK_SIZE: usize = 128;
+pub const BLOCK_SIZE: usize = 128;
 
 pub struct ReadCardDataResponse([u8; BLOCK_SIZE]);
 

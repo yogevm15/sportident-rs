@@ -1,6 +1,6 @@
 use crate::protocol::{DecoderError, Response};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CardType {
     Si8,
     Si9,
