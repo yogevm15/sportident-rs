@@ -1,6 +1,6 @@
 use crate::protocol::card::CardType;
-use crate::protocol::card_blocks::FromCardBlocks;
 use crate::protocol::card_blocks::punch::{Punch, StartOrFinishPunch};
+use crate::protocol::card_blocks::FromCardBlocks;
 use crate::protocol::DecoderError;
 
 #[derive(Debug)]

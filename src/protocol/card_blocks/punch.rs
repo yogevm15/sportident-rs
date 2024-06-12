@@ -1,8 +1,8 @@
-use chrono::{NaiveTime, TimeDelta};
-use strum_macros::FromRepr;
-use std::ops::{AddAssign, BitAnd, Shl, Shr};
 use crate::protocol::card::CardType;
 use crate::protocol::DecoderError;
+use chrono::{NaiveTime, TimeDelta};
+use std::ops::{AddAssign, BitAnd, Shl, Shr};
+use strum_macros::FromRepr;
 
 #[derive(Debug, FromRepr)]
 #[repr(u8)]
@@ -25,7 +25,7 @@ pub enum WeekCounter {
     Fourth = 3,
 }
 
-struct BasePunch{
+struct BasePunch {
     time: NaiveTime,
     day_of_week: DayOfWeek,
     week_counter: WeekCounter,
@@ -103,7 +103,10 @@ impl BasePunch {
 }
 
 impl Punch {
-    pub(crate) fn decode_punch(card_type: CardType, data: [u8; 4]) -> Result<Option<Self>, DecoderError> {
+    pub(crate) fn decode_punch(
+        card_type: CardType,
+        data: [u8; 4],
+    ) -> Result<Option<Self>, DecoderError> {
         match card_type {
             CardType::Si8
             | CardType::Si9
@@ -111,12 +114,16 @@ impl Punch {
             | CardType::Si11
             | CardType::Siac
             | CardType::PunchCard => {
-                let Some(BasePunch { time, day_of_week, week_counter }) = BasePunch::decode_punch(card_type, data)? else {
-                    return Ok(None)
+                let Some(BasePunch {
+                    time,
+                    day_of_week,
+                    week_counter,
+                }) = BasePunch::decode_punch(card_type, data)?
+                else {
+                    return Ok(None);
                 };
-                
-                let code =
-                    u16::from(data[1]) + u16::from(data[0].bitand(0b1100_0000)).shl(2u8);
+
+                let code = u16::from(data[1]) + u16::from(data[0].bitand(0b1100_0000)).shl(2u8);
 
                 Ok(Some(Self {
                     time,
@@ -129,7 +136,6 @@ impl Punch {
     }
 }
 
-
 impl SubSecondPunch {
     fn decode_punch(card_type: CardType, data: [u8; 4]) -> Result<Option<Self>, DecoderError> {
         match card_type {
@@ -139,12 +145,17 @@ impl SubSecondPunch {
             | CardType::Si11
             | CardType::Siac
             | CardType::PunchCard => {
-                let Some(BasePunch { mut time, day_of_week, week_counter }) = BasePunch::decode_punch(card_type, data)? else {
-                    return Ok(None)
+                let Some(BasePunch {
+                    mut time,
+                    day_of_week,
+                    week_counter,
+                }) = BasePunch::decode_punch(card_type, data)?
+                else {
+                    return Ok(None);
                 };
-                
+
                 time.add_assign(TimeDelta::milliseconds(i64::from(data[1]) * 1000 / 255));
-                
+
                 Ok(Some(Self {
                     time,
                     day_of_week,
@@ -156,7 +167,10 @@ impl SubSecondPunch {
 }
 
 impl StartOrFinishPunch {
-    pub(crate) fn decode_punch(card_type: CardType, data: [u8; 4]) -> Result<Option<Self>, DecoderError> {
+    pub(crate) fn decode_punch(
+        card_type: CardType,
+        data: [u8; 4],
+    ) -> Result<Option<Self>, DecoderError> {
         match card_type {
             CardType::Si8
             | CardType::Si9
