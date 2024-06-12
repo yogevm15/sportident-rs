@@ -21,20 +21,21 @@ impl FromCardBlocks for CardOwnerData {
     const INCLUDE_OWNER_DATA_BLOCKS: bool = true;
 
     fn from_card_blocks(data: &[u8], card_type: CardType) -> Result<Self, DecoderError> {
+        if data.len() < BLOCK_SIZE*2 {
+            return Err(DecoderError::InvalidReadoutDataLength);
+        }
+
         match card_type {
             CardType::PunchCard | CardType::Si10 | CardType::Si11 | CardType::Siac => {
-                if data.len() < BLOCK_SIZE {
-                    return Err(DecoderError::InvalidReadoutDataLength);
-                }
-
-                let eleventh_semicolon_pos = data[..BLOCK_SIZE]
+                let owner_data_slice = &data[32..160];
+                let eleventh_semicolon_pos = owner_data_slice
                     .iter()
                     .enumerate()
                     .filter_map(|(i, &b)| if b == b';' { Some(i) } else { None })
                     .nth(10)
                     .ok_or(DecoderError::InvalidOwnerData)?;
-
-                let Ok(owner_data_str) = from_utf8(&data[..eleventh_semicolon_pos]) else { return Err(DecoderError::InvalidOwnerData) };
+                
+                let Ok(owner_data_str) = from_utf8(&owner_data_slice[..eleventh_semicolon_pos]) else { return Err(DecoderError::InvalidOwnerData) };
 
                 let parts: Vec<_> = owner_data_str.split(';').collect();
 
@@ -70,22 +71,15 @@ impl FromCardBlocks for CardOwnerData {
             }
 
             CardType::Si9 | CardType::Si8 => {
-                if match card_type {
-                    CardType::Si9 => data.len() < 24,
-                    CardType::Si8 => data.len() < 104,
-                    _ => unreachable!(),
-                } {
-                    return Err(DecoderError::InvalidReadoutDataLength);
-                }
-
-                let second_semicolon_pos = data[..if card_type == CardType::Si9 { 24 } else { 104 }]
+                let owner_data_slice = &data[32..if card_type == CardType::Si9 { 56 } else { 136 }];
+                let second_semicolon_pos = owner_data_slice
                     .iter()
                     .enumerate()
                     .filter_map(|(i, &b)| if b == b';' { Some(i) } else { None })
                     .nth(1)
                     .ok_or(DecoderError::InvalidOwnerData)?;
 
-                let Ok(owner_data_str) = from_utf8(&data[..second_semicolon_pos]) else { return Err(DecoderError::InvalidOwnerData) };
+                let Ok(owner_data_str) = from_utf8(&owner_data_slice[..second_semicolon_pos]) else { return Err(DecoderError::InvalidOwnerData) };
 
                 let parts: Vec<_> = owner_data_str.split(';').collect();
 
@@ -135,12 +129,7 @@ impl FromCardBlocks for (CardReadout, CardOwnerData) {
         };
         let card_readout = CardReadout::from_card_blocks(card_readout_slice, card_type)?;
 
-        let owner_data_slice = match card_type {
-            CardType::Si8 => &data[32..136],
-            CardType::Si9 => &data[32..56],
-            CardType::PunchCard | CardType::Si10 | CardType::Si11 | CardType::Siac => &data[32..32 + BLOCK_SIZE],
-        };
-        let owner_data = CardOwnerData::from_card_blocks(owner_data_slice, card_type)?;
+        let owner_data = CardOwnerData::from_card_blocks(&data[0..BLOCK_SIZE*2], card_type)?;
 
         Ok((card_readout, owner_data))
     }

@@ -2,10 +2,14 @@ use futures::{SinkExt, StreamExt};
 use tokio_serial::{ClearBuffer, SerialPort, SerialPortBuilderExt, SerialStream};
 use tokio_util::codec::Framed;
 
-use crate::Error;
 use crate::error::Result;
-use crate::protocol::{Beep, CardOwnerData, CardReadout, Codec, Commands, DecoderError, FromCardBlocks, GetSystemConfiguration, ReadCardData, ReadCardDataResponse, Responses, SetMasterSlave, StationMode, SystemConfiguration};
 use crate::protocol::card::CardType;
+use crate::protocol::{
+    Beep, CardOwnerData, CardReadout, Codec, Commands, DecoderError, FromCardBlocks,
+    GetSystemConfiguration, ReadCardData, ReadCardDataResponse, Responses, SetMasterSlave,
+    StationMode, SystemConfiguration,
+};
+use crate::Error;
 
 const HIGH_SPEED_BAUD_RATE: u32 = 38400;
 const LOW_SPEED_BAUD_RATE: u32 = 4800;
@@ -59,7 +63,6 @@ impl Reader {
     }
 }
 
-
 impl Reader {
     pub async fn poll_card(&mut self) -> Result<CardReadout> {
         self.poll_card_generic().await
@@ -68,7 +71,7 @@ impl Reader {
     pub async fn poll_card_with_owner_data(&mut self) -> Result<(CardReadout, CardOwnerData)> {
         self.poll_card_generic().await
     }
-    
+
     async fn poll_card_generic<T: FromCardBlocks>(&mut self) -> Result<T> {
         if !self
             .system_configuration
@@ -87,7 +90,6 @@ impl Reader {
                     let card_data = self.read_card_data(card.card_type).await?;
                     self.framed_codec.send(Commands::Beep(Beep)).await?;
                     return Ok(card_data);
-
                 }
                 Responses::CardRemoved(_) => return Err(Error::CardRemovedWhileReadingData),
                 _ => {}
@@ -100,26 +102,14 @@ impl Reader {
         match card_type {
             CardType::Si8 | CardType::Si9 | CardType::PunchCard => {
                 for i in 0..=1 {
-                    self.framed_codec
-                        .send(Commands::ReadCardData(ReadCardData::new(i)))
-                        .await?;
-
-                    card_data.extend_from_slice(
-                        &receive_card_data_response(&mut self.framed_codec).await?,
-                    );
+                    card_data.extend_from_slice(&self.get_block_from_card(i).await?);
                 }
             }
-            
+
             CardType::Si10 | CardType::Si11 | CardType::Siac => {
                 if T::INCLUDE_OWNER_DATA_BLOCKS {
                     for i in 0..=1 {
-                        self.framed_codec
-                            .send(Commands::ReadCardData(ReadCardData::new(i)))
-                            .await?;
-
-                        card_data.extend_from_slice(
-                            &receive_card_data_response(&mut self.framed_codec).await?,
-                        );
+                        card_data.extend_from_slice(&self.get_block_from_card(i).await?);
                     }
                 }
 
@@ -135,6 +125,14 @@ impl Reader {
         }
 
         Ok(T::from_card_blocks(&card_data, card_type)?)
+    }
+
+    async fn get_block_from_card(&mut self, i: u8) -> Result<ReadCardDataResponse> {
+        self.framed_codec
+            .send(Commands::ReadCardData(ReadCardData::new(i)))
+            .await?;
+
+        receive_card_data_response(&mut self.framed_codec).await
     }
 }
 
