@@ -4,14 +4,14 @@ pub use crc::*;
 pub use decoder::*;
 pub use encoder::*;
 pub use responses::*;
-pub use readout::*;
+pub use card_blocks::*;
 mod commands;
 mod constants;
 mod crc;
 mod decoder;
 mod encoder;
 mod responses;
-mod readout;
+mod card_blocks;
 
 pub struct Codec {
     waiting: bool,
