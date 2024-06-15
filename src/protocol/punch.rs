@@ -1,10 +1,10 @@
-use crate::protocol::card::CardType;
+use crate::protocol::responses::card::CardType;
 use crate::protocol::DecoderError;
 use chrono::{NaiveTime, TimeDelta};
 use std::ops::{AddAssign, BitAnd, Shl, Shr};
 use strum_macros::FromRepr;
 
-#[derive(Debug, FromRepr)]
+#[derive(Debug, PartialEq, Eq, FromRepr)]
 #[repr(u8)]
 pub enum DayOfWeek {
     Monday = 0,
@@ -16,7 +16,7 @@ pub enum DayOfWeek {
     Sunday = 6,
 }
 
-#[derive(Debug, FromRepr)]
+#[derive(Debug, PartialEq, Eq, FromRepr)]
 #[repr(u8)]
 pub enum WeekCounter {
     First = 0,
@@ -31,7 +31,7 @@ struct BasePunch {
     week_counter: WeekCounter,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Punch {
     pub time: NaiveTime,
     pub day_of_week: DayOfWeek,
@@ -39,14 +39,14 @@ pub struct Punch {
     pub code: u16,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct SubSecondPunch {
     pub time: NaiveTime,
     pub day_of_week: DayOfWeek,
     pub week_counter: WeekCounter,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum StartOrFinishPunch {
     Normal(Punch),
     SubSecond(SubSecondPunch),
@@ -137,7 +137,10 @@ impl Punch {
 }
 
 impl SubSecondPunch {
-    fn decode_punch(card_type: CardType, data: [u8; 4]) -> Result<Option<Self>, DecoderError> {
+    pub(crate) fn decode_punch(
+        card_type: CardType,
+        data: [u8; 4],
+    ) -> Result<Option<Self>, DecoderError> {
         match card_type {
             CardType::Si8
             | CardType::Si9
