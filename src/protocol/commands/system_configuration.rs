@@ -203,4 +203,8 @@ impl ProtocolConfiguration {
     pub const fn is_extended_protocol(&self) -> bool {
         self.contains(Self::EXTENDED_PROTOCOL)
     }
+
+    pub const fn is_auto_send(&self) -> bool {
+        self.contains(Self::AUTO_SEND_OUT)
+    }
 }

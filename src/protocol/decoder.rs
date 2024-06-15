@@ -2,9 +2,11 @@ use tokio_util::bytes::{Buf, BytesMut};
 use tokio_util::codec::Decoder;
 
 use crate::protocol;
-use crate::protocol::card::{Card, CardRemoved};
+use crate::protocol::responses::card::{Card, CardRemoved};
+use crate::protocol::responses::card_punch::CardPunch;
 use crate::protocol::{
-    crc, Codec, ReadCardDataResponse, Response, SetMasterSlaveResponse, SystemConfiguration,
+    crc, BeepResponse, Codec, ReadCardDataResponse, Response, SetMasterSlaveResponse,
+    SystemConfiguration,
 };
 
 const IGNORED_DATA_LENGTH: usize = 2;
@@ -54,7 +56,9 @@ pub enum Responses {
     SetMasterSlaveResponse(SetMasterSlaveResponse),
     CardInserted(Card),
     CardRemoved(CardRemoved),
+    BeepResponse(BeepResponse),
     CardData(ReadCardDataResponse),
+    CardPunch(CardPunch),
 }
 
 impl TryFrom<(u8, Vec<u8>)> for Responses {
@@ -67,6 +71,8 @@ impl TryFrom<(u8, Vec<u8>)> for Responses {
             0xe7 => Self::CardRemoved(CardRemoved::decode(&data)?),
             0xe8 => Self::CardInserted(Card::decode(&data)?),
             0xef => Self::CardData(ReadCardDataResponse::decode(&data)?),
+            0x06 => Self::BeepResponse(BeepResponse::decode(&data)?),
+            0xd3 => Self::CardPunch(CardPunch::decode(&data)?),
             _ => return Err(DecoderError::InvalidCommand(cmd)),
         })
     }

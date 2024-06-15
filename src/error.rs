@@ -17,7 +17,7 @@ pub enum Error {
     #[error("Received invalid command (expected: {0:#04x}, found: {1:#04x})")]
     ReceivedInvalidCommand(u8, u8),
     #[error(
-        "This command only supports stations in \"Extended Protocol\" mode. Switch mode first"
+        "This feature only supports stations in \"Extended Protocol\" mode. Switch mode first"
     )]
     NotExtendedProtocolMode,
     #[error("Station must be in 'Read SI cards' operating mode! Change operating mode first.")]
@@ -26,6 +26,8 @@ pub enum Error {
     PortClosed,
     #[error("Card removed while reading data")]
     CardRemovedWhileReadingData,
+    #[error("This feature only supports stations in \"Auto Send\" mode. Switch mode first")]
+    NotAutoSendMode,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

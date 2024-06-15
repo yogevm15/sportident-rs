@@ -1,13 +1,17 @@
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+
 use futures::{SinkExt, StreamExt};
 use tokio_serial::{ClearBuffer, SerialPort, SerialPortBuilderExt, SerialStream};
 use tokio_util::codec::Framed;
 
 use crate::error::Result;
-use crate::protocol::card::CardType;
+use crate::protocol::responses::card::CardType;
+use crate::protocol::responses::card_punch::CardPunch;
 use crate::protocol::{
-    Beep, CardOwnerData, CardReadout, Codec, Commands, DecoderError, FromCardBlocks,
+    Beep, CardBlocks, CardOwnerData, CardReadout, Codec, Commands, DecoderError, FromCardBlocks,
     GetSystemConfiguration, ReadCardData, ReadCardDataResponse, Responses, SetMasterSlave,
-    StationMode, SystemConfiguration,
+    StationMode, SystemConfiguration, BLOCK_SIZE,
 };
 use crate::Error;
 
@@ -64,11 +68,19 @@ impl Reader {
 }
 
 impl Reader {
+    pub async fn beep_until_card_removed(&mut self) -> Result<()> {
+        send_and_receive_command(&mut self.framed_codec, Commands::Beep(Beep))
+            .await
+            .map(|_| ())
+    }
     pub async fn poll_card(&mut self) -> Result<CardReadout> {
         self.poll_card_generic().await
     }
 
     pub async fn poll_card_with_owner_data(&mut self) -> Result<(CardReadout, CardOwnerData)> {
+        self.poll_card_generic().await
+    }
+    pub async fn poll_owner_data(&mut self) -> Result<CardOwnerData> {
         self.poll_card_generic().await
     }
 
@@ -88,7 +100,6 @@ impl Reader {
             match receive_command(&mut self.framed_codec).await? {
                 Responses::CardInserted(card) => {
                     let card_data = self.read_card_data(card.card_type).await?;
-                    self.framed_codec.send(Commands::Beep(Beep)).await?;
                     return Ok(card_data);
                 }
                 Responses::CardRemoved(_) => return Err(Error::CardRemovedWhileReadingData),
@@ -96,43 +107,31 @@ impl Reader {
             }
         }
     }
-
-    async fn read_card_data<T: FromCardBlocks>(&mut self, card_type: CardType) -> Result<T> {
-        let mut card_data = vec![];
-        match card_type {
-            CardType::Si8 | CardType::Si9 | CardType::PunchCard => {
-                for i in 0..=1 {
-                    card_data.extend_from_slice(&self.get_block_from_card(i).await?);
-                }
-            }
-
-            CardType::Si10 | CardType::Si11 | CardType::Siac => {
-                if T::INCLUDE_OWNER_DATA_BLOCKS {
-                    for i in 0..=1 {
-                        card_data.extend_from_slice(&self.get_block_from_card(i).await?);
-                    }
-                }
-
-                self.framed_codec
-                    .send(Commands::ReadCardData(ReadCardData::new(8)))
-                    .await?;
-                for _ in 0..5 {
-                    card_data.extend_from_slice(
-                        &receive_card_data_response(&mut self.framed_codec).await?,
-                    );
-                }
-            }
+    pub async fn poll_punch(&mut self) -> Result<CardPunch> {
+        if !self
+            .system_configuration
+            .protocol_configuration
+            .is_extended_protocol()
+        {
+            return Err(Error::NotExtendedProtocolMode);
         }
 
-        Ok(T::from_card_blocks(&card_data, card_type)?)
+        if !self
+            .system_configuration
+            .protocol_configuration
+            .is_auto_send()
+        {
+            return Err(Error::NotAutoSendMode);
+        }
+
+        match receive_command(&mut self.framed_codec).await? {
+            Responses::CardPunch(punch) => Ok(punch),
+            _ => Err(Error::InvalidResponseReceived),
+        }
     }
 
-    async fn get_block_from_card(&mut self, i: u8) -> Result<ReadCardDataResponse> {
-        self.framed_codec
-            .send(Commands::ReadCardData(ReadCardData::new(i)))
-            .await?;
-
-        receive_card_data_response(&mut self.framed_codec).await
+    async fn read_card_data<T: FromCardBlocks>(&mut self, card_type: CardType) -> Result<T> {
+        T::from_card_blocks(&mut ReaderBlocks::new(&mut self.framed_codec), card_type).await
     }
 }
 
@@ -164,5 +163,34 @@ pub async fn receive_card_data_response(
         Responses::CardRemoved(_) => Err(Error::CardRemovedWhileReadingData),
         Responses::CardData(card_data) => Ok(card_data),
         _ => Err(Error::InvalidResponseReceived),
+    }
+}
+
+struct ReaderBlocks<'a> {
+    framed_codec: &'a mut Framed<SerialStream, Codec>,
+    cache: HashMap<usize, [u8; BLOCK_SIZE]>,
+}
+
+impl<'a> ReaderBlocks<'a> {
+    fn new(framed_codec: &'a mut Framed<SerialStream, Codec>) -> Self {
+        Self {
+            framed_codec,
+            cache: HashMap::default(),
+        }
+    }
+}
+
+impl<'a> CardBlocks for ReaderBlocks<'a> {
+    async fn get_block<'b>(&'b mut self, index: u8) -> Result<&'b [u8; BLOCK_SIZE]> {
+        if let Entry::Vacant(e) = self.cache.entry(index as usize) {
+            self.framed_codec
+                .send(Commands::ReadCardData(ReadCardData::new(index)))
+                .await?;
+
+            let block = receive_card_data_response(self.framed_codec).await?;
+            e.insert(block.0);
+        }
+
+        Ok(self.cache.get(&(index as usize)).unwrap())
     }
 }

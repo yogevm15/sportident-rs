@@ -24,6 +24,7 @@ impl CardType {
     }
 }
 
+#[derive(Debug)]
 pub struct Card {
     pub card_type: CardType,
     pub number: u32,
