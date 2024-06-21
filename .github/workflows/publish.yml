@@ -1,0 +1,22 @@
+name: Publish
+
+on:
+  workflow_run:
+    workflows: ["Checks"]
+    branches: [master]
+    types:
+      - completed
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: prod
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish new release
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+
