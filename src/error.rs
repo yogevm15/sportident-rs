@@ -28,6 +28,8 @@ pub enum Error {
     CardRemovedWhileReadingData,
     #[error("This feature only supports stations in \"Auto Send\" mode. Switch mode first")]
     NotAutoSendMode,
+    #[error("No reader detected")]
+    NoReaderDetected,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
