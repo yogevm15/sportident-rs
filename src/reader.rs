@@ -2,6 +2,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 use futures::{SinkExt, StreamExt};
+use serialport::{SerialPortType, UsbPortInfo};
 use tokio_serial::{ClearBuffer, SerialPort, SerialPortBuilderExt, SerialStream};
 use tokio_util::codec::Framed;
 
@@ -64,6 +65,26 @@ impl Reader {
             framed_codec,
             system_configuration,
         })
+    }
+
+    pub async fn auto_connect() -> Result<Self> {
+        const SPORTIDENT_VENDOR_ID: u16 = 4292;
+        const SPORTIDENT_READER_PRODUCT_ID: u16 = 32778;
+
+        for port in serialport::available_ports()? {
+            if let SerialPortType::UsbPort(UsbPortInfo {
+                vid: SPORTIDENT_VENDOR_ID,
+                pid: SPORTIDENT_READER_PRODUCT_ID,
+                ..
+            }) = port.port_type
+            {
+                if let Ok(reader) = Self::connect(port.port_name).await {
+                    return Ok(reader);
+                }
+            }
+        }
+
+        Err(Error::NoReaderDetected)
     }
 }
 

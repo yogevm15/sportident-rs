@@ -14,12 +14,12 @@ include = ["/src", "LICENSE", "/examples", "README.md"]
 bitflags = "2"
 chrono = "0.4.35"
 enum_dispatch = "0.3.12"
-tokio-serial = "5.0.5"
-tokio-util = { version = "0.7", features = ["codec"] }
-thiserror = "1.0.58"
-strum_macros = "0.26"
 futures = "0.3.30"
 serialport = "4.2.0"
+strum_macros = "0.26"
+thiserror = "1.0.58"
+tokio-serial = "5.0.5"
+tokio-util = { version = "0.7", features = ["codec"] }
 
 [dev-dependencies]
 hex = "0.4"
