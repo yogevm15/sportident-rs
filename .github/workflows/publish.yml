@@ -16,7 +16,11 @@ jobs:
     environment: prod
 
     steps:
+      - name: Install dependencies
+        run: |
+          sudo sed -i 's/azure.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
+          sudo apt-get -qq update
+          sudo apt install -qq -y libudev-dev
       - uses: actions/checkout@v4
       - name: Publish new release
         run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
-
