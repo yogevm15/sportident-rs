@@ -15,11 +15,20 @@ jobs:
       runs-on: ubuntu-latest
   
       steps:
+      - name: Install dependencies
+        run: |
+          sudo sed -i 's/azure.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
+          sudo apt-get -qq update
+          sudo apt install -qq -y libudev-dev
       - uses: actions/checkout@v4
       - name: Install cargo-sort
         run: cargo install cargo-sort
       - name: Install cargo-machete
         run: cargo install cargo-machete
+      - name: Run rustfmt
+        run: cargo fmt --all --check
+      - name: Run clippy
+        run: cargo clippy
       - name: Run cargo-sort
         run: cargo sort -c
       - name: Run cargo-machete
