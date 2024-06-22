@@ -1,6 +1,6 @@
 [package]
 name = "sportident"
-version = "0.0.6"
+version = "0.0.7"
 edition = "2021"
 description = "Interact with Sportident in rust with ease."
 license = "Apache-2.0"
