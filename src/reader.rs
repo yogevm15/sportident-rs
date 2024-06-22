@@ -156,7 +156,7 @@ impl Reader {
     }
 }
 
-pub async fn send_and_receive_command(
+async fn send_and_receive_command(
     framed: &mut Framed<SerialStream, Codec>,
     cmd: Commands,
 ) -> Result<Responses> {
@@ -165,11 +165,11 @@ pub async fn send_and_receive_command(
     receive_command(framed).await
 }
 
-pub async fn receive_command(framed: &mut Framed<SerialStream, Codec>) -> Result<Responses> {
+async fn receive_command(framed: &mut Framed<SerialStream, Codec>) -> Result<Responses> {
     Ok(framed.next().await.ok_or(Error::PortClosed)??)
 }
 
-pub async fn receive_card_data_response(
+async fn receive_card_data_response(
     framed: &mut Framed<SerialStream, Codec>,
 ) -> Result<ReadCardDataResponse> {
     let response = receive_command(framed).await.map_err(|e| {
