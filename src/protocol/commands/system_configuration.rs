@@ -11,6 +11,7 @@ use crate::protocol::Command;
 const SYSTEM_CONFIGURATION_LENGTH: usize = 0x81;
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub struct SystemConfiguration {
     pub serial_number: u32,
     pub srr_configuration: SRRConfiguration,
@@ -37,6 +38,7 @@ pub struct SystemConfiguration {
 }
 
 bitflags! {
+    #[derive(Debug)]
     pub struct SI6CardBlocks: u8 {
         const FIRST =   0b0000_0001;
         const SECOND =  0b0000_0010;
@@ -50,6 +52,7 @@ bitflags! {
 }
 
 bitflags! {
+    #[derive(Debug)]
     pub struct PunchFeedback: u8 {
         const OPTICAL = 0b0000_0001;
         const AUDIBLE = 0b0000_0100;
@@ -57,6 +60,7 @@ bitflags! {
 }
 
 bitflags! {
+    #[derive(Debug)]
     pub struct SRRConfiguration: u8 {
         const OPTICAL = 0b0000_0001;
         const AUDIBLE = 0b0000_0100;
@@ -64,6 +68,7 @@ bitflags! {
 }
 
 bitflags! {
+    #[derive(Debug)]
     pub struct ProtocolConfiguration: u8 {
         const EXTENDED_PROTOCOL =   0b0000_0001;
         const AUTO_SEND_OUT =       0b0000_0010;
@@ -73,7 +78,7 @@ bitflags! {
     }
 }
 
-#[derive(FromRepr)]
+#[derive(FromRepr, Debug)]
 #[repr(u16)]
 pub enum Model {
     SRRDongle = 0x6F21,
@@ -98,19 +103,20 @@ pub enum Model {
     BS11BS = 0xCD9B,
 }
 
-#[derive(FromRepr)]
+#[derive(FromRepr, Debug)]
 #[repr(u8)]
 pub enum SRRChannel {
     Red = 0x00,
     Blue = 0x01,
 }
 
+#[derive(Debug)]
 pub enum StationProgram {
     Competition,
     Training,
 }
 
-#[derive(FromRepr, PartialEq, Eq)]
+#[derive(FromRepr, Debug, PartialEq, Eq)]
 #[repr(u8)]
 pub enum StationMode {
     SIACSpecial = 0x01,

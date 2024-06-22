@@ -1,6 +1,6 @@
 use crate::protocol::{DecoderError, Response};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd)]
 pub enum CardType {
     Si8,
     Si9,
@@ -24,7 +24,7 @@ impl CardType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Card {
     pub card_type: CardType,
     pub number: u32,
@@ -51,6 +51,7 @@ impl Response for Card {
     }
 }
 
+#[derive(Debug)]
 pub struct CardRemoved;
 impl Response for CardRemoved {
     fn decode(_data: &[u8]) -> Result<Self, DecoderError> {

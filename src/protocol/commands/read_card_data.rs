@@ -13,6 +13,7 @@ impl ReadCardData {
 
 pub const BLOCK_SIZE: usize = 128;
 
+#[derive(Debug)]
 pub struct ReadCardDataResponse(pub [u8; BLOCK_SIZE]);
 
 impl Deref for ReadCardDataResponse {

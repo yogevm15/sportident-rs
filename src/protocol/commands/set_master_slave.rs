@@ -9,6 +9,7 @@ pub enum SetMasterSlave {
     Slave = 0x53,
 }
 
+#[derive(Debug)]
 pub struct SetMasterSlaveResponse;
 
 impl Command for SetMasterSlave {

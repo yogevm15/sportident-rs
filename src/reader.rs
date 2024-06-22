@@ -90,9 +90,7 @@ impl Reader {
 
 impl Reader {
     pub async fn beep_until_card_removed(&mut self) -> Result<()> {
-        send_and_receive_command(&mut self.framed_codec, Commands::Beep(Beep))
-            .await
-            .map(|_| ())
+        Ok(self.framed_codec.send(Commands::Beep(Beep)).await?)
     }
     pub async fn poll_card(&mut self) -> Result<CardReadout> {
         self.poll_card_generic().await
@@ -118,13 +116,9 @@ impl Reader {
         }
 
         loop {
-            match receive_command(&mut self.framed_codec).await? {
-                Responses::CardInserted(card) => {
-                    let card_data = self.read_card_data(card.card_type).await?;
-                    return Ok(card_data);
-                }
-                Responses::CardRemoved(_) => return Err(Error::CardRemovedWhileReadingData),
-                _ => {}
+            if let Responses::CardInserted(card) = receive_command(&mut self.framed_codec).await? {
+                let card_data = self.read_card_data(card.card_type).await?;
+                return Ok(card_data);
             }
         }
     }
