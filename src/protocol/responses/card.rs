@@ -24,7 +24,7 @@ impl CardType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone)]
 pub struct Card {
     pub card_type: CardType,
     pub number: u32,

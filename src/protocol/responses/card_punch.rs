@@ -1,7 +1,7 @@
 use crate::protocol::responses::card::Card;
 use crate::protocol::{DecoderError, Response, SubSecondPunch};
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone)]
 pub struct CardPunch {
     pub punch: SubSecondPunch,
     pub card: Card,

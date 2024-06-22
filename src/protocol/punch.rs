@@ -4,7 +4,7 @@ use chrono::{NaiveTime, TimeDelta};
 use std::ops::{AddAssign, BitAnd, Shl, Shr};
 use strum_macros::FromRepr;
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, FromRepr)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone, FromRepr)]
 #[repr(u8)]
 pub enum DayOfWeek {
     Monday = 0,
@@ -16,7 +16,7 @@ pub enum DayOfWeek {
     Sunday = 6,
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, FromRepr)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone, FromRepr)]
 #[repr(u8)]
 pub enum WeekCounter {
     First = 0,
@@ -31,7 +31,7 @@ struct BasePunch {
     week_counter: WeekCounter,
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone)]
 pub struct Punch {
     pub time: NaiveTime,
     pub day_of_week: DayOfWeek,
@@ -39,14 +39,14 @@ pub struct Punch {
     pub code: u16,
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone)]
 pub struct SubSecondPunch {
     pub time: NaiveTime,
     pub day_of_week: DayOfWeek,
     pub week_counter: WeekCounter,
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone)]
 pub enum StartOrFinishPunch {
     Normal(Punch),
     SubSecond(SubSecondPunch),

@@ -116,7 +116,7 @@ pub enum StationProgram {
     Training,
 }
 
-#[derive(FromRepr, Debug, PartialEq, Eq)]
+#[derive(FromRepr, Debug, PartialEq, Eq, Ord, PartialOrd, Clone, Copy)]
 #[repr(u8)]
 pub enum StationMode {
     SIACSpecial = 0x01,

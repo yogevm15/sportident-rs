@@ -1,6 +1,6 @@
 [package]
 name = "sportident"
-version = "0.0.8"
+version = "0.0.9"
 edition = "2021"
 description = "Interact with Sportident in rust with ease."
 license = "Apache-2.0"
@@ -11,7 +11,7 @@ categories = ["hardware-support"]
 include = ["/src", "LICENSE", "/examples", "README.md"]
 
 [dependencies]
-bitflags = "2"
+bitflags = "2.5"
 chrono = "0.4.35"
 enum_dispatch = "0.3.12"
 futures = "0.3.30"

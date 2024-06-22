@@ -3,7 +3,7 @@ use std::str::from_utf8;
 use crate::protocol::responses::card::CardType;
 use crate::protocol::{CardBlocks, DecoderError, FromCardBlocks, BLOCK_SIZE};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone)]
 pub struct CardOwnerData {
     pub first_name: String,
     pub last_name: String,

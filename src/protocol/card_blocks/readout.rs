@@ -2,7 +2,7 @@ use crate::protocol::card_blocks::FromCardBlocks;
 use crate::protocol::responses::card::CardType;
 use crate::protocol::{CardBlocks, DecoderError, Punch, StartOrFinishPunch, BLOCK_SIZE};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone)]
 pub struct CardReadout {
     pub card_number: u32,
     pub card_type: CardType,
