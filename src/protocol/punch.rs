@@ -1,10 +1,10 @@
 use crate::protocol::responses::card::CardType;
 use crate::protocol::DecoderError;
 use chrono::{NaiveTime, TimeDelta};
+use std::mem::transmute;
 use std::ops::{AddAssign, BitAnd, Shl, Shr};
-use strum_macros::FromRepr;
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone, FromRepr)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone)]
 #[repr(u8)]
 pub enum DayOfWeek {
     Monday = 0,
@@ -16,7 +16,7 @@ pub enum DayOfWeek {
     Sunday = 6,
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone, FromRepr)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone)]
 #[repr(u8)]
 pub enum WeekCounter {
     First = 0,
@@ -88,14 +88,17 @@ impl BasePunch {
                     .shr(1u8)
                     .wrapping_sub(1u8)
                     % 7u8;
+                // SAFETY: `DayOfWeek` is valid for 0-6 which is guaranteed by `% 7`.
+                let day_of_week = unsafe { transmute::<u8, DayOfWeek>(day_of_week) };
+
                 let week_counter = punch_time_date.bitand(0b0011_0000).shr(4u8);
+                // SAFETY: `WeekCounter` is valid for 0-3 which is guaranteed by using only 2 bits.
+                let week_counter = unsafe { transmute::<u8, WeekCounter>(week_counter) };
 
                 Ok(Some(Self {
                     time,
-                    day_of_week: unsafe { DayOfWeek::from_repr(day_of_week).unwrap_unchecked() },
-                    week_counter: unsafe {
-                        WeekCounter::from_repr(week_counter).unwrap_unchecked()
-                    },
+                    day_of_week,
+                    week_counter,
                 }))
             }
         }

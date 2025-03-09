@@ -193,6 +193,7 @@ impl Response for SystemConfiguration {
             protocol_configuration: ProtocolConfiguration::from_bits_retain(data[116]),
             wakeup_date: naive_date_from_data(data[117], data[118], data[119])?,
             active_duration: unsafe {
+                // SAFETY: `u8::MAX` minutes is always in `Duration` bounds.
                 Duration::try_minutes(i64::from(data[126])).unwrap_unchecked()
             },
         })

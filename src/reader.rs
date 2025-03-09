@@ -195,8 +195,8 @@ impl<'a> ReaderBlocks<'a> {
     }
 }
 
-impl<'a> CardBlocks for ReaderBlocks<'a> {
-    async fn get_block<'b>(&'b mut self, index: u8) -> Result<&'b [u8; BLOCK_SIZE]> {
+impl CardBlocks for ReaderBlocks<'_> {
+    async fn get_block(&mut self, index: u8) -> Result<&[u8; BLOCK_SIZE]> {
         if let Entry::Vacant(e) = self.cache.entry(index as usize) {
             self.framed_codec
                 .send(Commands::ReadCardData(ReadCardData::new(index)))

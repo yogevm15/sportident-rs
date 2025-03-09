@@ -24,9 +24,11 @@ impl FromCardBlocks for CardReadout {
             if data.len() < punches_end_offset {
                 return Err(DecoderError::InvalidReadoutDataLength.into());
             }
+            // TODO: use #![feature(array_chunks)] when stabilized.
             let punches = data[punches_start_offset..punches_end_offset]
                 .chunks_exact(4)
                 .filter_map(|punch_data| {
+                    // SAFETY: `chunks_exact` guarantee that `punch_data` length is 4.
                     Punch::decode_punch(card_type, unsafe {
                         punch_data.try_into().unwrap_unchecked()
                     })
