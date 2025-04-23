@@ -13,13 +13,3 @@ mod decoder;
 mod encoder;
 mod punch;
 pub mod responses;
-
-pub struct Codec {
-    waiting: bool,
-}
-
-impl Default for Codec {
-    fn default() -> Self {
-        Self { waiting: true }
-    }
-}

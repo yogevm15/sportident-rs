@@ -1,4 +1,5 @@
-use crate::protocol::{DecoderError, Response};
+use crate::protocol::{DecodableResponse, DecoderError};
+use std::ops::Deref;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd)]
 pub enum CardType {
@@ -38,22 +39,35 @@ impl Card {
     }
 }
 
-impl Response for Card {
+pub struct CardInserted(pub Card);
+
+impl Deref for CardInserted {
+    type Target = Card;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DecodableResponse for CardInserted {
+    const MAGIC: u8 = 0xe8;
+
     fn decode(data: &[u8]) -> Result<Self, DecoderError> {
-        const CARD_INSERTED_LENGTH: usize = 4;
+        const CARD_INSERTED_LENGTH: usize = 3;
         if data.len() != CARD_INSERTED_LENGTH {
-            return Err(DecoderError::InvalidCardInsertedLength(
-                CARD_INSERTED_LENGTH,
-                data.len(),
-            ));
+            return Err(DecoderError::MissingData(CARD_INSERTED_LENGTH, data.len()));
         }
-        Self::new(u32::from_be_bytes([0, data[1], data[2], data[3]]))
+        Ok(Self(Card::new(u32::from_be_bytes([
+            0, data[0], data[1], data[2],
+        ]))?))
     }
 }
 
 #[derive(Debug)]
 pub struct CardRemoved;
-impl Response for CardRemoved {
+impl DecodableResponse for CardRemoved {
+    const MAGIC: u8 = 0xe7;
+
     fn decode(_data: &[u8]) -> Result<Self, DecoderError> {
         Ok(Self)
     }
