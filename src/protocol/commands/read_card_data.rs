@@ -1,5 +1,8 @@
-use crate::protocol::{Command, DecoderError, Response};
-use std::ops::{Deref, DerefMut};
+use crate::protocol::commands::WithResponse;
+use crate::protocol::{Command, DecodableResponse, DecoderError};
+use std::slice;
+
+pub const BLOCK_SIZE: usize = 128;
 
 pub struct ReadCardData {
     block: u8,
@@ -11,42 +14,31 @@ impl ReadCardData {
     }
 }
 
-pub const BLOCK_SIZE: usize = 128;
-
 #[derive(Debug)]
-pub struct ReadCardDataResponse(pub [u8; BLOCK_SIZE]);
+pub struct ReadCardDataResponse(Vec<u8>);
 
-impl Deref for ReadCardDataResponse {
-    type Target = [u8];
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for ReadCardDataResponse {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+impl From<ReadCardDataResponse> for Vec<u8> {
+    fn from(value: ReadCardDataResponse) -> Self {
+        value.0
     }
 }
 
 impl Command for ReadCardData {
-    fn command_parameters(&self) -> Vec<u8> {
-        self.block.to_be_bytes().to_vec()
-    }
+    const MAGIC: u8 = 0xef;
+    type Response = WithResponse<ReadCardDataResponse>;
 
-    fn magic(&self) -> u8 {
-        0xef
+    fn encode(&self) -> &[u8] {
+        slice::from_ref(&self.block)
     }
 }
 
-impl Response for ReadCardDataResponse {
+impl DecodableResponse for ReadCardDataResponse {
+    const MAGIC: u8 = 0xef;
+
     fn decode(data: &[u8]) -> Result<Self, DecoderError> {
-        if data.is_empty() {
-            return Err(DecoderError::InvalidBlockSize(BLOCK_SIZE, 0));
+        if data.len() != BLOCK_SIZE {
+            return Err(DecoderError::MissingData(BLOCK_SIZE, data.len()));
         }
-        let data = &data[1..];
-        Ok(Self(data.try_into().map_err(|_| {
-            DecoderError::InvalidBlockSize(BLOCK_SIZE, data.len())
-        })?))
+        Ok(Self(data.to_vec()))
     }
 }

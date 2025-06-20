@@ -1,7 +1,9 @@
-use crate::protocol::commands::Response;
-use crate::protocol::decoder::DecoderError;
-use crate::protocol::Command;
+use crate::protocol::commands::WithResponse;
+use crate::protocol::{Command, DecodableResponse};
+use crate::DecoderError;
+use std::slice;
 
+#[repr(u8)]
 #[derive(Copy, Clone, Debug)]
 #[allow(dead_code)]
 pub enum SetMasterSlave {
@@ -13,16 +15,18 @@ pub enum SetMasterSlave {
 pub struct SetMasterSlaveResponse;
 
 impl Command for SetMasterSlave {
-    fn command_parameters(&self) -> Vec<u8> {
-        vec![*self as u8]
-    }
+    const MAGIC: u8 = 0xf0;
+    type Response = WithResponse<SetMasterSlaveResponse>;
 
-    fn magic(&self) -> u8 {
-        0xf0
+    fn encode(&self) -> &[u8] {
+        // SAFETY: `SetMasterSlave` is repr u8.
+        slice::from_ref(unsafe { &*std::ptr::from_ref::<Self>(self).cast::<u8>() })
     }
 }
 
-impl Response for SetMasterSlaveResponse {
+impl DecodableResponse for SetMasterSlaveResponse {
+    const MAGIC: u8 = 0xf0;
+
     fn decode(_data: &[u8]) -> Result<Self, DecoderError> {
         Ok(Self)
     }

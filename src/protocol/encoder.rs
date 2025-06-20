@@ -1,38 +1,37 @@
-use tokio_util::bytes::BytesMut;
+use tokio_util::bytes::{BufMut, BytesMut};
 use tokio_util::codec::Encoder;
 
 use crate::protocol;
-use crate::protocol::{
-    crc, Beep, Codec, Command, GetSystemConfiguration, ReadCardData, SetMasterSlave,
-};
+use crate::protocol::{crc_iter, Command};
+
+pub struct CommandEncoder;
 
 #[derive(thiserror::Error, Debug)]
 pub enum EncoderError {
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
-    #[error(
-        "Command parameters are too long, maximum length is {0} bytes, but {1} bytes were given"
-    )]
-    CommandParametersTooLong(usize, usize),
+    #[error("Encoded command is too long, maximum length is {0} bytes, but {1} bytes were given")]
+    EncodedCommandTooLong(usize, usize),
 }
 
-#[enum_dispatch::enum_dispatch(Command)]
-pub enum Commands {
-    SetMasterSlave(SetMasterSlave),
-    GetSystemConfiguration(GetSystemConfiguration),
-    Beep(Beep),
-    ReadCardData(ReadCardData),
-}
-impl Encoder<Commands> for Codec {
+impl<C: Command> Encoder<C> for CommandEncoder {
     type Error = EncoderError;
 
-    fn encode(&mut self, command: Commands, dst: &mut BytesMut) -> Result<(), Self::Error> {
-        let command_bytes = command.encode()?;
-
-        dst.extend_from_slice(&[protocol::WAKEUP, protocol::START]);
-        dst.extend_from_slice(command_bytes.as_slice());
-        dst.extend_from_slice(crc(command_bytes.as_slice()).to_be_bytes().as_slice());
-        dst.extend_from_slice(&[protocol::END]);
+    fn encode(&mut self, command: C, dst: &mut BytesMut) -> Result<(), Self::Error> {
+        let parameters = command.encode();
+        let len = u8::try_from(parameters.len())
+            .map_err(|_| EncoderError::EncodedCommandTooLong(u8::MAX as usize, parameters.len()))?;
+        dst.put_u8(protocol::WAKEUP);
+        dst.put_u8(protocol::START);
+        dst.put_u8(C::MAGIC);
+        dst.put_u8(len);
+        dst.put_slice(parameters);
+        dst.put_u16(crc_iter(
+            [C::MAGIC, len]
+                .into_iter()
+                .chain(parameters.iter().copied()),
+        ));
+        dst.put_u8(protocol::END);
 
         Ok(())
     }

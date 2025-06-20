@@ -4,11 +4,9 @@ use bitflags::bitflags;
 use chrono::{Duration, NaiveDate};
 use strum_macros::FromRepr;
 
-use crate::protocol::commands::Response;
+use crate::protocol::commands::WithResponse;
 use crate::protocol::decoder::DecoderError;
-use crate::protocol::Command;
-
-const SYSTEM_CONFIGURATION_LENGTH: usize = 0x81;
+use crate::protocol::{Command, DecodableResponse};
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -140,24 +138,26 @@ pub enum StationMode {
 pub struct GetSystemConfiguration;
 
 impl Command for GetSystemConfiguration {
-    fn command_parameters(&self) -> Vec<u8> {
-        vec![0x00, 0x80]
-    }
-    fn magic(&self) -> u8 {
-        0x83
+    const MAGIC: u8 = 0x83;
+    type Response = WithResponse<SystemConfiguration>;
+
+    fn encode(&self) -> &[u8] {
+        &[0x00, 0x80]
     }
 }
-impl Response for SystemConfiguration {
+
+impl DecodableResponse for SystemConfiguration {
+    const MAGIC: u8 = 0x83;
+
     fn decode(data: &[u8]) -> Result<Self, DecoderError> {
+        const SYSTEM_CONFIGURATION_LENGTH: usize = 0x80;
+
         if data.len() != SYSTEM_CONFIGURATION_LENGTH {
-            return Err(DecoderError::InvalidSystemConfiguration(
+            return Err(DecoderError::MissingData(
                 SYSTEM_CONFIGURATION_LENGTH,
                 data.len(),
             ));
         }
-
-        // Ignoring the first byte.
-        let data = &data[1..];
 
         let model_id = u16::from_be_bytes([data[11], data[12]]);
 
@@ -193,6 +193,7 @@ impl Response for SystemConfiguration {
             protocol_configuration: ProtocolConfiguration::from_bits_retain(data[116]),
             wakeup_date: naive_date_from_data(data[117], data[118], data[119])?,
             active_duration: unsafe {
+                // SAFETY: `u8::MAX` minutes is always in `Duration` bounds.
                 Duration::try_minutes(i64::from(data[126])).unwrap_unchecked()
             },
         })
